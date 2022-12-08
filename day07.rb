@@ -157,3 +157,24 @@ end
 
 part1 = Part1.new(tree).result
 puts "Part 1: #{part1}"
+
+class Part2
+  def initialize(tree)
+    @tree = tree
+  end
+
+  def result
+    total_disk_space = 70_000_000
+    total_unused_space_needed = 30_000_000
+    current_unused_space = total_disk_space - @tree.size
+    additional_space_to_free = total_unused_space_needed - current_unused_space
+
+    dir = @tree.all_child_dirs.sort_by(&:size).detect do |dir|
+      dir.size > additional_space_to_free
+    end
+    dir.size
+  end
+end
+
+part2 = Part2.new(tree).result
+puts "Part 2: #{part2}"
