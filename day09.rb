@@ -26,19 +26,19 @@ motions = File.readlines("day09.txt", chomp: true).map do |line|
   Motion.new(direction: direction, amount: amount.to_i)
 end
 
-head = Location.new(x: 0, y: 0)
-tail = Location.new(x: 0, y: 0)
-tail_locations = Set.new
+def print_grid(knots)
+  head = knots.first
+  tail = knots.last
 
-print_grid = lambda do
   [4,3,2,1,0].each do |y|
     (0..5).each do |x|
-      if head.x == x && head.y == y
-        print "H"
-      elsif tail.x == x && tail.y == y
-        print "T"
-      elsif x == 0 && y == 0
-        print "s"
+      current = knots.index { |knot| knot.x == x && knot.y == y }
+      if current
+        if current == 0
+          print "H"
+        else
+          print current
+        end
       else
         print "."
       end
@@ -48,47 +48,75 @@ print_grid = lambda do
   puts
 end
 
-motions.each do |motion|
-  puts "== #{motion.direction} #{motion.amount} =="
-
-  motion.amount.times do
-    case motion.direction
-    when "U" then head.move_up
-    when "D" then head.move_down
-    when "R" then head.move_right
-    when "L" then head.move_left
-    end
-
-    unless head.adjacent?(tail)
-      if head.y == tail.y
-        if head.x > tail.x + 1
-          tail.x += 1
-        elsif head.x < tail.x - 1
-          tail.x -= 1
-        end
-      elsif head.x == tail.x
-        if head.y > tail.y + 1
-          tail.y += 1
-        elsif head.y < tail.y - 1
-          tail.y -= 1
-        end
+def follow_the_leader(leader, follower)
+  unless leader.adjacent?(follower)
+    if leader.y == follower.y
+      if leader.x > follower.x + 1
+        follower.x += 1
+      elsif leader.x < follower.x - 1
+        follower.x -= 1
+      end
+    elsif leader.x == follower.x
+      if leader.y > follower.y + 1
+        follower.y += 1
+      elsif leader.y < follower.y - 1
+        follower.y -= 1
+      end
+    else
+      if leader.x > follower.x
+        follower.x += 1
       else
-        if head.x > tail.x
-          tail.x += 1
-        else
-          tail.x -= 1
-        end
-        if head.y > tail.y
-          tail.y += 1
-        else
-          tail.y -= 1
-        end
+        follower.x -= 1
+      end
+      if leader.y > follower.y
+        follower.y += 1
+      else
+        follower.y -= 1
       end
     end
-
-    tail_locations << tail.dup
-    # print_grid.call
   end
 end
 
-puts "Part 1: #{tail_locations.size}"
+def run(knots, motions)
+  tail_locations = Set.new
+  head = knots.first
+  tail = knots.last
+
+  motions.each do |motion|
+    puts "== #{motion.direction} #{motion.amount} =="
+
+    motion.amount.times do
+      case motion.direction
+      when "U" then head.move_up
+      when "D" then head.move_down
+      when "R" then head.move_right
+      when "L" then head.move_left
+      end
+
+      knots.each_cons(2) do |leader, follower|
+        follow_the_leader(leader, follower)
+      end
+
+      tail_locations << tail.dup
+      # print_grid(knots)
+    end
+  end
+
+  tail_locations.size
+end
+
+def part1(motions)
+  head = Location.new(x: 0, y: 0)
+  tail = Location.new(x: 0, y: 0)
+  tail_locations_size = run([head, tail], motions)
+  puts "Part 1: #{tail_locations_size}"
+end
+
+def part2(motions)
+  knots = 10.times.map { Location.new(x: 0, y: 0) }
+  tail_locations_size = run(knots, motions)
+  puts "Part 2: #{tail_locations_size}"
+end
+
+# part1(motions)
+part2(motions)
