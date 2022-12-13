@@ -128,12 +128,9 @@ class Dijkstra
 
   def unvisited_neighbors(node)
     x, y = node
-    res = []
-    res << [x, y - 1] if can_travel?(node, [x, y - 1])
-    res << [x, y + 1] if can_travel?(node, [x, y + 1])
-    res << [x - 1, y] if can_travel?(node, [x - 1, y])
-    res << [x + 1, y] if can_travel?(node, [x + 1, y])
-    res
+    [[x, y - 1], [x, y + 1], [x - 1, y], [x + 1, y]].select do |neighbor|
+      can_travel?(node, neighbor)
+    end
   end
 
   def can_travel?(from, to)
