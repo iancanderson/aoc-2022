@@ -1,24 +1,46 @@
 require "active_support/all"
 
 class Day13
-  def self.in_right_order?(left, right)
+  def self.in_right_order?(left, right, depth = 0)
+    # TODO: how to skip this iteration if both are empty?
+    # return nil if left.empty? && right.empty?
+
     lval = left.shift
-    return true if lval.nil?
+    if lval.nil?
+      log "- Left side is empty, so inputs are in the right order", depth
+      return true
+    end
 
     rval = right.shift
-    return false if rval.nil?
+    if rval.nil?
+      log "- Right side is empty, so inputs are not in the right order", depth
+      return false
+    end
 
     if lval.is_a?(Integer) && rval.is_a?(Integer)
+      log "- Compare #{lval} vs #{rval}", depth + 1
       if lval < rval
+        log "Left side is smaller, so inputs are in the right order", depth + 2
         return true
       elsif lval > rval
+        log "Right side is smaller, so inputs are not in the right order", depth + 2
         return false
       else
         in_right_order?(left, right)
       end
+    elsif lval.is_a?(Array) && rval.is_a?(Array)
+      log "- Compare #{lval} vs #{rval}", depth + 1
+      # At least one is an array.
+      # Make sure they're both arrays and try again
+      in_right_order?(lval, rval, depth + 1) && in_right_order?(left, right, depth)
     else
-      in_right_order?(Array(left), Array(right))
+      log "- Compare #{Array(lval)} vs #{Array(rval)}", depth + 1
+      in_right_order?(Array(lval), Array(rval), depth + 1) && in_right_order?(left, right, depth + 1)
     end
+  end
+
+  def self.log(msg, depth)
+    puts "#{'  ' * depth}#{msg}"
   end
 end
 
@@ -32,7 +54,20 @@ pairs = File.readlines("day13.txt", chomp: true).in_groups_of(3).map do |left, r
   Pair.new(left: JSON.parse(left), right: JSON.parse(right))
 end
 
-puts pairs.inspect
 
-part1 = pairs.count(&:in_right_order?)
+indices = []
+
+part1 = pairs.each_with_index.sum do |pair, i|
+  puts "\n== Pair #{i+1} =="
+  puts "- Compare: #{pair.left} vs #{pair.right}"
+  if pair.in_right_order?
+    indices << i + 1
+    i + 1
+  else
+    0
+  end
+end
 puts "Part 1: #{part1}"
+
+puts "#{pairs.size} pairs"
+puts "#{indices}"
