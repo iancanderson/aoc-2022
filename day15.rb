@@ -4,11 +4,31 @@ regex =  /(-?\d+)/
 
 Sensor = Struct.new(:sx, :sy, :bx, :by) do
   def distance_to_beacon
-    (bx - sx).abs + (by - sy).abs
+    @distance_to_beacon ||= (bx - sx).abs + (by - sy).abs
   end
 
   def distance_to_row(y)
     (sy - y).abs
+  end
+
+  # Returns an array of [x, y] pairs that
+  # represents the points in the detection area,
+  # as determined by the distance_to_beacon
+  def points_in_detection_area
+    (top_row..bottom_row).flat_map do |row|
+      x_distance_remaining = distance_to_beacon - distance_to_row(row)
+      (sx - x_distance_remaining..sx + x_distance_remaining).map do |x|
+        [x, row]
+      end
+    end
+  end
+
+  def top_row
+    sy - distance_to_beacon
+  end
+
+  def bottom_row
+    sy + distance_to_beacon
   end
 end
 
@@ -50,3 +70,37 @@ class Part1
 end
 
 puts "Part 1: #{Part1.new(sensors).num_points_where_beacon_cannot_be(2000000)}"
+
+class Part2
+  def initialize(sensors, coord_limit: 20)
+    @sensors = sensors
+    @points_where_beacon_cannot_be = Set.new
+    @coord_limit = coord_limit
+  end
+
+  def tuning_frequency
+    x, y = undetected_beacon
+    x * 4000000 + y
+  end
+
+  def undetected_beacon
+    # Fill in the points where the undetected_beacon cannot be
+    @sensors.each_with_index do |sensor, i|
+      puts "Sensor #{i}"
+      @points_where_beacon_cannot_be += sensor.points_in_detection_area
+      puts @points_where_beacon_cannot_be if i == 0
+    end
+
+    result = nil
+    (0..@coord_limit).to_a.repeated_permutation(2) do |x, y|
+      if !@points_where_beacon_cannot_be.include?([x, y])
+        result = [x, y]
+        break
+      end
+    end
+
+    result
+  end
+end
+
+puts "Part 2: #{Part2.new(sensors).tuning_frequency}"
